@@ -1,5 +1,12 @@
 # contrib-wall
 
+<center>
+  <a href="https://github.com/nyakang/contrib-wall/graphs/contributors">
+    <img src="https://contrib-wall.coderkang.workers.dev/image?snapshot=RKGZXUsPArYrduozjO2pecpy&amp;sealed_token=eyJ2IjoxLCJ0eXBlIjoic25hcHNob3QiLCJzbmFwc2hvdCI6IlJLR1pYVXNQQXJZcmR1b3pqTzJwZWNweSIsImV4cCI6MTgxNTAzMDQ3MH0.rR2VPbgKOk6DTByHLeJPfGmPWRyivGZvVcBptsPpegM" alt="贡献者" />
+  </a>
+</center>
+
+
 用 Cloudflare Workers 生成可嵌入 README 的 GitHub 贡献者头像墙。
 
 用户在页面中填写自己的 GitHub Token 和仓库地址，Worker 只用这个 token 请求一次 GitHub Contributors API，随后把生成好的 SVG 快照写入 KV。README 中嵌入的是带签名的快照图片地址，不包含用户的 GitHub Token。
@@ -117,103 +124,3 @@ npx wrangler secret put SEALING_SECRET
 ```bash
 npm run deploy
 ```
-
-## GitHub Token 权限
-
-推荐使用 Fine-grained personal access token，并只授予目标仓库所需的最小权限：
-
-```txt
-Repository access:
-  选择需要展示贡献者的仓库
-
-Repository permissions:
-  Metadata: Read-only
-```
-
-公开仓库理论上可以匿名请求 GitHub API，但让用户提供自己的 token 可以避免服务提供者承担所有 GitHub API 额度。
-
-## README 嵌入示例
-
-生成成功后，页面会给出 Markdown：
-
-```md
-<a href="https://github.com/owner/repo/graphs/contributors">
-  <img src="https://your-domain.com/image?snapshot=xxx&sealed_token=xxx" alt="Contributors to owner/repo" />
-</a>
-```
-
-其中：
-
-- `snapshot` 是 KV 中保存的 SVG 快照 ID。
-- `sealed_token` 是 Worker 用 `SEALING_SECRET` 签名后的访问令牌。
-- GitHub Token 不会出现在这个 URL 中。
-
-## API
-
-生成快照：
-
-```http
-POST /api/generate
-Authorization: Bearer github_pat_xxx
-Content-Type: application/json
-```
-
-示例请求体：
-
-```json
-{
-  "repo": "owner/repo",
-  "title": "Contributors",
-  "description": "Thanks for building with us",
-  "theme": "github",
-  "animation": "float",
-  "sticker": "star",
-  "max": 48,
-  "columns": 8,
-  "expiresInDays": 0
-}
-```
-
-常用选项：
-
-- `theme`: `transparent`, `light`, `dark`, `github`, `ocean`, `sunset`, `forest`, `candy`, `terminal`
-- `animation`: `none`, `float`, `pop`, `pulse`
-- `sticker`: `none`, `sparkle`, `star`, `heart`, `code`
-- `expiresInDays`: `0` 表示快照长期有效；大于 `0` 时会设置 KV TTL 和签名过期时间。
-
-## 安全说明
-
-可以提交到 GitHub：
-
-- `wrangler.toml` 中的非敏感配置。
-- `.dev.vars.example` 中的占位示例。
-- `public/`、`src/`、`package.json`、`package-lock.json` 等源码和前端资源。
-
-不要提交到 GitHub：
-
-- `.dev.vars`
-- `.dev.vars.*`
-- `.env`
-- `.env.*`
-- Cloudflare API token、GitHub Token、私钥文件、生产密钥和真实账户凭据。
-
-生产环境的 `SEALING_SECRET` 必须通过 `npx wrangler secret put SEALING_SECRET` 设置，不要写进 `wrangler.toml`、源码或 README。
-
-## 脚本
-
-```bash
-npm run dev        # 本地启动 Worker
-npm run deploy     # 部署到 Cloudflare Workers
-npm run typecheck  # TypeScript 类型检查
-npm run check      # 当前等同于 typecheck
-```
-
-## 进一步加固
-
-如果要把它作为公开服务长期运行，建议继续增加：
-
-- Cloudflare Turnstile。
-- 更严格的 IP 限流和异常请求监控。
-- 对生成参数的用量配额。
-- GitHub OAuth 或 GitHub App 登录流程。
-- Cloudflare Workers Observability。
