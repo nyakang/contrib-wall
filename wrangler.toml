@@ -1,0 +1,32 @@
+name = "contrib-wall"
+main = "src/index.ts"
+compatibility_date = "2026-07-08"
+workers_dev = true
+assets = { directory = "./public", binding = "ASSETS" }
+
+# 创建后把 id / preview_id 替换掉：
+#   npx wrangler kv namespace create CONTRIB_CACHE
+#   npx wrangler kv namespace create CONTRIB_CACHE --preview
+[[kv_namespaces]]
+binding = "CONTRIB_CACHE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+
+[vars]
+SERVICE_NAME = "contrib-wall"
+GITHUB_API_BASE = "https://api.github.com"
+
+# SVG 图片响应缓存时间。
+IMAGE_CACHE_TTL_SECONDS = "86400"
+
+# true: /image 必须带 snapshot + sealed_token
+REQUIRE_SNAPSHOT_TOKEN = "true"
+
+# 可选：为空代表允许用户为任意仓库生成快照。
+# 如果你只想给自己的仓库用，可以改成：
+# ALLOWED_REPOS = "nyakang/nyaterm,nyakang/docs-site"
+ALLOWED_REPOS = ""
+
+# 简单防刷：每个 IP 每小时最多生成多少次。
+# 设为 0 可关闭。
+GENERATE_RATE_LIMIT_PER_HOUR = "30"

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contrib Wall</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main>
+    <header class="hero">
+      <div>
+        <h1>Contrib Wall</h1>
+        <p data-i18n="heroText">
+          使用你自己的 GitHub Token 生成贡献者头像墙快照。Token 只用于本次生成，不会保存，也不会出现在图片 URL 中。
+        </p>
+      </div>
+      <div class="hero-actions">
+        <label class="sr-only" for="language" data-i18n="languageLabel">Language</label>
+        <select id="language" class="language-select" aria-label="Language">
+          <option value="zh-CN">简体中文</option>
+          <option value="en">English</option>
+        </select>
+        <a class="ghost-link" href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noreferrer" data-i18n="createToken">
+          创建 GitHub Token
+        </a>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <form id="form">
+          <div class="field">
+            <label for="githubToken" data-i18n="githubToken">GitHub Token</label>
+            <input id="githubToken" name="githubToken" type="password" autocomplete="off" placeholder="github_pat_xxx" required />
+            <div class="hint" data-i18n="tokenHint">
+              推荐 Fine-grained Token，只给目标仓库 Metadata: Read-only 权限。Token 只通过 HTTPS POST 发送一次。
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="repo" data-i18n="repo">Repository</label>
+            <input id="repo" name="repo" value="nyakang/nyaterm" placeholder="owner/repo" required />
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="title" data-i18n="title">Title</label>
+              <input id="title" name="title" maxlength="80" data-i18n-placeholder="titlePlaceholder" placeholder="Contributors" />
+            </div>
+
+            <div class="field">
+              <label for="description" data-i18n="description">Description</label>
+              <input id="description" name="description" maxlength="140" data-i18n-placeholder="descriptionPlaceholder" placeholder="Thanks for building with us" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="mode" data-i18n="mode">Mode</label>
+              <select id="mode" name="mode">
+                <option value="github">github</option>
+                <option value="mixed" selected>mixed</option>
+                <option value="manual">manual</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="theme" data-i18n="theme">Theme</label>
+              <select id="theme" name="theme">
+                <option value="transparent" selected data-i18n="themeTransparent">transparent</option>
+                <option value="light" data-i18n="themeLight">light</option>
+                <option value="dark" data-i18n="themeDark">dark</option>
+                <option value="github" data-i18n="themeGithub">github</option>
+                <option value="ocean" data-i18n="themeOcean">ocean</option>
+                <option value="sunset" data-i18n="themeSunset">sunset</option>
+                <option value="forest" data-i18n="themeForest">forest</option>
+                <option value="candy" data-i18n="themeCandy">candy</option>
+                <option value="terminal" data-i18n="themeTerminal">terminal</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="animation" data-i18n="animation">Animation</label>
+              <select id="animation" name="animation">
+                <option value="none" selected data-i18n="animationNone">none</option>
+                <option value="float" data-i18n="animationFloat">float</option>
+                <option value="pop" data-i18n="animationPop">pop</option>
+                <option value="pulse" data-i18n="animationPulse">pulse</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="sticker" data-i18n="sticker">Sticker</label>
+              <select id="sticker" name="sticker">
+                <option value="none" selected data-i18n="stickerNone">none</option>
+                <option value="sparkle" data-i18n="stickerSparkle">sparkle</option>
+                <option value="star" data-i18n="stickerStar">star</option>
+                <option value="heart" data-i18n="stickerHeart">heart</option>
+                <option value="code" data-i18n="stickerCode">code</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="max" data-i18n="max">Max</label>
+              <input id="max" name="max" type="number" min="1" max="100" value="100" />
+            </div>
+
+            <div class="field">
+              <label for="columns" data-i18n="columns">Columns</label>
+              <input id="columns" name="columns" type="number" min="1" max="20" value="10" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="avatarSize" data-i18n="avatarSize">Avatar Size</label>
+              <input id="avatarSize" name="avatarSize" type="number" min="16" max="128" value="56" />
+            </div>
+
+            <div class="field">
+              <label for="gap" data-i18n="gap">Gap</label>
+              <input id="gap" name="gap" type="number" min="0" max="32" value="8" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="radius" data-i18n="radius">Radius</label>
+              <input id="radius" name="radius" type="number" min="0" max="999" value="999" />
+            </div>
+
+            <div class="field">
+              <label for="expiresInDays" data-i18n="ttl">Snapshot TTL Days</label>
+              <input id="expiresInDays" name="expiresInDays" type="number" min="0" max="3650" value="365" />
+            </div>
+          </div>
+
+          <label class="checkbox">
+            <input id="showName" name="showName" type="checkbox" />
+            <span data-i18n="showName">showName</span>
+          </label>
+
+          <label class="checkbox">
+            <input id="anon" name="anon" type="checkbox" />
+            <span data-i18n="anon">include anonymous contributors</span>
+          </label>
+
+          <button id="submit" type="submit" data-i18n="generate">Generate snapshot URL</button>
+
+          <p class="hint" data-i18n="ttlHint">
+            TTL 为 0 表示不过期，但公共服务不建议开放永久快照，否则 KV 容量容易被滥用。
+          </p>
+        </form>
+      </section>
+
+      <section class="card">
+        <p id="status" class="status"></p>
+
+        <h2 class="small-title" data-i18n="preview">Preview</h2>
+        <div class="preview">
+          <img id="preview" alt="" />
+        </div>
+
+        <div class="field">
+          <label for="imageUrl" data-i18n="imageUrl">Image URL</label>
+          <textarea id="imageUrl" readonly></textarea>
+          <button class="secondary" type="button" data-copy="imageUrl" data-copy-label="copyImageUrl" data-i18n="copyImageUrl">Copy Image URL</button>
+        </div>
+
+        <div class="field">
+          <label for="markdown" data-i18n="markdown">Markdown</label>
+          <textarea id="markdown" readonly></textarea>
+          <button class="secondary" type="button" data-copy="markdown" data-copy-label="copyMarkdown" data-i18n="copyMarkdown">Copy Markdown</button>
+        </div>
+
+        <div class="field">
+          <label for="html" data-i18n="html">HTML</label>
+          <textarea id="html" readonly></textarea>
+          <button class="secondary" type="button" data-copy="html" data-copy-label="copyHtml" data-i18n="copyHtml">Copy HTML</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>
