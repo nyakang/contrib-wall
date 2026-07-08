@@ -1,10 +1,10 @@
 # contrib-wall
 
-<center>
+<p align="center">
   <a href="https://github.com/nyakang/contrib-wall/graphs/contributors">
     <img src="https://contrib-wall.coderkang.workers.dev/image?snapshot=RKGZXUsPArYrduozjO2pecpy&amp;sealed_token=eyJ2IjoxLCJ0eXBlIjoic25hcHNob3QiLCJzbmFwc2hvdCI6IlJLR1pYVXNQQXJZcmR1b3pqTzJwZWNweSIsImV4cCI6MTgxNTAzMDQ3MH0.rR2VPbgKOk6DTByHLeJPfGmPWRyivGZvVcBptsPpegM" alt="贡献者" />
   </a>
-</center>
+</p>
 
 
 用 Cloudflare Workers 生成可嵌入 README 的 GitHub 贡献者头像墙。
