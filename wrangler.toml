@@ -2,15 +2,7 @@ name = "contrib-wall"
 main = "src/index.ts"
 compatibility_date = "2026-07-08"
 workers_dev = true
-assets = { directory = "./public", binding = "ASSETS" }
-
-# 创建后把 id / preview_id 替换掉：
-#   npx wrangler kv namespace create CONTRIB_CACHE
-#   npx wrangler kv namespace create CONTRIB_CACHE --preview
-[[kv_namespaces]]
-binding = "CONTRIB_CACHE"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+assets = { directory = "./public", binding = "assets" }
 
 [vars]
 SERVICE_NAME = "contrib-wall"
@@ -18,6 +10,9 @@ GITHUB_API_BASE = "https://api.github.com"
 
 # SVG 图片响应缓存时间。
 IMAGE_CACHE_TTL_SECONDS = "86400"
+
+# 贡献者数据自动刷新间隔。默认每天刷新一次。
+CONTRIB_REFRESH_INTERVAL_SECONDS = "86400"
 
 # true: /image 必须带 snapshot + sealed_token
 REQUIRE_SNAPSHOT_TOKEN = "true"

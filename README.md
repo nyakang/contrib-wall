@@ -9,118 +9,38 @@
 
 用 Cloudflare Workers 生成可嵌入 README 的 GitHub 贡献者头像墙。
 
-用户在页面中填写自己的 GitHub Token 和仓库地址，Worker 只用这个 token 请求一次 GitHub Contributors API，随后把生成好的 SVG 快照写入 KV。README 中嵌入的是带签名的快照图片地址，不包含用户的 GitHub Token。
-
 ## 特性
 
-- 生成静态 SVG 贡献者头像墙，可直接放进 GitHub README。
-- GitHub Token 只通过 `POST /api/generate` 使用一次，不保存到 KV，也不会进入图片 URL。
-- 图片访问走 `/image?snapshot=...&sealed_token=...`，由 `SEALING_SECRET` 签名校验。
+- 生成可自动刷新的 SVG 贡献者头像墙，可直接放进 GitHub README。
+- 默认每天刷新一次贡献者列表，刷新失败时继续展示旧 SVG，并在 1 小时后重试。
 - 头像会内联到 SVG，降低 README 预览时外链头像裂图的概率。
-- 支持中文和英文界面。
 - 支持自定义标题、描述、主题、动画、贴纸、头像尺寸和展示数量。
 - 支持 GitHub 贡献者、手动补充贡献者、混合展示模式。
 - 使用 Cloudflare Workers Static Assets 托管前端，使用 KV 保存快照。
 
-## 工作流程
-
-```txt
-用户打开页面
-  -> 填写 GitHub Token、仓库和展示参数
-  -> POST /api/generate
-  -> Worker 使用用户 token 拉取 contributors
-  -> 生成 SVG 快照并写入 KV
-  -> 返回 /image?snapshot=...&sealed_token=...
-  -> README 嵌入这个图片地址
-  -> 后续图片访问只读 KV，不再访问 GitHub API
-```
-
-## 项目结构
-
-```txt
-contrib-wall/
-├── public/
-│   ├── index.html
-│   ├── styles.css
-│   └── app.js
-├── src/
-│   ├── avatar.ts
-│   ├── cache.ts
-│   ├── config.ts
-│   ├── contributors.ts
-│   ├── github.ts
-│   ├── http.ts
-│   ├── index.ts
-│   ├── manual-contributors.ts
-│   ├── params.ts
-│   ├── rate-limit.ts
-│   ├── seal.ts
-│   ├── snapshot.ts
-│   ├── svg.ts
-│   └── types.ts
-├── .dev.vars.example
-├── wrangler.toml
-└── package.json
-```
-
-## 本地开发
-
-安装依赖：
-
-```bash
-npm install
-```
-
-准备本地密钥：
-
-```bash
-cp .dev.vars.example .dev.vars
-```
-
-把 `.dev.vars` 里的 `SEALING_SECRET` 改成至少 32 个字符的随机字符串，例如：
-
-```bash
-openssl rand -base64 48
-```
-
-启动开发服务：
-
-```bash
-npm run dev
-```
-
-默认访问：
-
-```txt
-http://localhost:8787/
-```
 
 ## 部署
 
-创建 KV namespace：
+这个项目默认按 Cloudflare Dashboard 配置绑定，先部署 Worker 代码，然后打开：
 
-```bash
-npx wrangler kv namespace create CONTRIB_CACHE
-npx wrangler kv namespace create CONTRIB_CACHE --preview
+```txt
+Cloudflare Dashboard -> Workers & Pages -> 你的 Worker -> Settings -> Bindings
 ```
 
-把命令输出的 `id` 和 `preview_id` 填入 `wrangler.toml`：
+添加 KV namespace 绑定：
 
-```toml
-[[kv_namespaces]]
-binding = "CONTRIB_CACHE"
-id = "..."
-preview_id = "..."
+```txt
+类型：KV namespace
+名称：kv
+值：选择你的 KV 命名空间
 ```
 
-设置生产签名密钥：
+添加生产签名密钥：
 
-```bash
-npx wrangler secret put SEALING_SECRET
+```txt
+类型：Secret
+名称：SEALING_SECRET
+值：至少 32 个字符的随机字符串
 ```
 
-部署：
-
-```bash
-npm run deploy
-```
+绑定名称必须和代码一致：`kv`、`assets`、`SEALING_SECRET`。旧部署里的 `CONTRIB_CACHE` 和 `ASSETS` 仍然可以被代码识别，但不再作为推荐配置。

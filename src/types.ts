@@ -1,9 +1,12 @@
 export interface Env {
+  assets?: Fetcher;
   ASSETS?: Fetcher;
+  kv?: KVNamespace;
   CONTRIB_CACHE?: KVNamespace;
   GITHUB_API_BASE?: string;
   SERVICE_NAME?: string;
   IMAGE_CACHE_TTL_SECONDS?: string;
+  CONTRIB_REFRESH_INTERVAL_SECONDS?: string;
   SEALING_SECRET?: string;
   REQUIRE_SNAPSHOT_TOKEN?: string;
   ALLOWED_REPOS?: string;
@@ -62,6 +65,9 @@ export interface SnapshotRecord {
   svg: string;
   createdAt: number;
   expiresAt: number | null;
+  refreshedAt?: number;
+  nextRefreshAt?: number;
+  lastRefreshError?: string;
   repo: string;
   contributorCount: number;
   options: Omit<ImageOptions, "repo"> & {
@@ -73,6 +79,15 @@ export interface SnapshotSealPayload {
   v: 1;
   type: "snapshot";
   snapshot: string;
+  exp: number;
+}
+
+export interface GitHubTokenSealPayload {
+  v: 1;
+  type: "github_token";
+  snapshot: string;
+  repo: string;
+  token: string;
   exp: number;
 }
 

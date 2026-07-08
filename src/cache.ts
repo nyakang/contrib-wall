@@ -1,3 +1,4 @@
+import { getKv } from "./bindings";
 import type { Env } from "./types";
 
 interface MemoryEntry<T> {
@@ -37,10 +38,10 @@ export function memoryPut<T>(key: string, value: T, ttlSeconds: number): void {
 }
 
 export async function kvGetText(env: Env, key: string): Promise<string | null> {
-  if (!env.CONTRIB_CACHE) return null;
+  const kv = getKv(env);
 
   try {
-    return await env.CONTRIB_CACHE.get(key);
+    return await kv.get(key);
   } catch (error) {
     console.warn("KV get failed", key, error);
     return null;
@@ -53,21 +54,21 @@ export async function kvPutText(
   value: string,
   ttlSeconds?: number
 ): Promise<void> {
-  if (!env.CONTRIB_CACHE) return;
+  const kv = getKv(env);
 
   try {
     const options = ttlSeconds && ttlSeconds >= 60 ? { expirationTtl: ttlSeconds } : undefined;
-    await env.CONTRIB_CACHE.put(key, value, options);
+    await kv.put(key, value, options);
   } catch (error) {
     console.warn("KV put failed", key, error);
   }
 }
 
 export async function kvDelete(env: Env, key: string): Promise<void> {
-  if (!env.CONTRIB_CACHE) return;
+  const kv = getKv(env);
 
   try {
-    await env.CONTRIB_CACHE.delete(key);
+    await kv.delete(key);
   } catch (error) {
     console.warn("KV delete failed", key, error);
   }

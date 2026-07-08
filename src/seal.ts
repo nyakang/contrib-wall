@@ -1,7 +1,10 @@
 import { shouldRequireSnapshotToken } from "./config";
-import { AppError, type Env, type SnapshotSealPayload } from "./types";
+import { AppError, type Env, type GitHubTokenSealPayload, type SnapshotSealPayload } from "./types";
 
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+const GITHUB_TOKEN_IV_BYTES = 12;
+const MAX_SEALED_GITHUB_TOKEN_LENGTH = 8192;
 
 export async function sealSnapshot(env: Env, snapshotId: string, exp = 0): Promise<string> {
   const secret = getSealingSecret(env);
@@ -55,6 +58,88 @@ export async function verifySnapshotToken(env: Env, snapshotId: string, token: s
   }
 }
 
+export async function sealGitHubToken(
+  env: Env,
+  snapshotId: string,
+  repo: string,
+  githubToken: string,
+  exp = 0
+): Promise<string> {
+  const payload = stableGitHubTokenPayloadString({
+    v: 1,
+    type: "github_token",
+    snapshot: snapshotId,
+    repo,
+    token: githubToken,
+    exp
+  });
+  const iv = crypto.getRandomValues(new Uint8Array(GITHUB_TOKEN_IV_BYTES));
+  const key = await deriveGitHubTokenKey(getSealingSecret(env));
+  const ciphertext = await crypto.subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv: bufferSourceFromBytes(iv)
+    },
+    key,
+    bufferSourceFromBytes(encoder.encode(payload))
+  );
+
+  return `${base64UrlEncodeBytes(iv)}.${base64UrlEncodeBytes(new Uint8Array(ciphertext))}`;
+}
+
+export async function unsealGitHubToken(
+  env: Env,
+  snapshotId: string,
+  repo: string,
+  token: string
+): Promise<string> {
+  if (token.length > MAX_SEALED_GITHUB_TOKEN_LENGTH) {
+    throw new AppError(401, "invalid_sealed_github_token", "sealed_github_token is too long");
+  }
+
+  const [ivB64, ciphertextB64, extra] = token.split(".");
+  if (!ivB64 || !ciphertextB64 || extra !== undefined) {
+    throw new AppError(401, "invalid_sealed_github_token", "Invalid sealed_github_token format");
+  }
+
+  const iv = base64UrlDecodeBytes(ivB64);
+  if (iv.byteLength !== GITHUB_TOKEN_IV_BYTES) {
+    throw new AppError(401, "invalid_sealed_github_token", "Invalid sealed_github_token IV");
+  }
+
+  let payload: GitHubTokenSealPayload;
+
+  try {
+    const key = await deriveGitHubTokenKey(getSealingSecret(env));
+    const plaintext = await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: bufferSourceFromBytes(iv)
+      },
+      key,
+      bufferSourceFromBytes(base64UrlDecodeBytes(ciphertextB64))
+    );
+    payload = parseGitHubTokenPayload(decoder.decode(plaintext));
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(401, "invalid_sealed_github_token", "Invalid sealed_github_token");
+  }
+
+  if (payload.snapshot !== snapshotId) {
+    throw new AppError(401, "sealed_github_token_mismatch", "sealed_github_token does not match current snapshot");
+  }
+
+  if (payload.repo !== repo) {
+    throw new AppError(401, "sealed_github_token_repo_mismatch", "sealed_github_token does not match current repo");
+  }
+
+  if (payload.exp > 0 && Math.floor(Date.now() / 1000) > payload.exp) {
+    throw new AppError(401, "sealed_github_token_expired", "sealed_github_token has expired");
+  }
+
+  return payload.token;
+}
+
 function payloadFromSnapshot(snapshotId: string, exp: number): SnapshotSealPayload {
   return {
     v: 1,
@@ -74,13 +159,13 @@ function getSealingSecret(env: Env): string {
 }
 
 async function sign(secret: string, payloadB64: string): Promise<string> {
-  const key = await importKey(secret);
+  const key = await importHmacKey(secret);
   const signature = await crypto.subtle.sign("HMAC", key, bufferSourceFromBytes(encoder.encode(payloadB64)));
   return base64UrlEncodeBytes(new Uint8Array(signature));
 }
 
 async function verify(secret: string, payloadB64: string, signatureB64: string): Promise<boolean> {
-  const key = await importKey(secret);
+  const key = await importHmacKey(secret);
   const signature = base64UrlDecodeBytes(signatureB64);
 
   return await crypto.subtle.verify(
@@ -91,7 +176,7 @@ async function verify(secret: string, payloadB64: string, signatureB64: string):
   );
 }
 
-async function importKey(secret: string): Promise<CryptoKey> {
+async function importHmacKey(secret: string): Promise<CryptoKey> {
   return await crypto.subtle.importKey(
     "raw",
     bufferSourceFromBytes(encoder.encode(secret)),
@@ -101,6 +186,28 @@ async function importKey(secret: string): Promise<CryptoKey> {
     },
     false,
     ["sign", "verify"]
+  );
+}
+
+async function deriveGitHubTokenKey(secret: string): Promise<CryptoKey> {
+  const baseKey = await crypto.subtle.importKey("raw", bufferSourceFromBytes(encoder.encode(secret)), "HKDF", false, [
+    "deriveKey"
+  ]);
+
+  return await crypto.subtle.deriveKey(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: bufferSourceFromBytes(encoder.encode("contrib-wall-seal-v1")),
+      info: bufferSourceFromBytes(encoder.encode("github-token"))
+    },
+    baseKey,
+    {
+      name: "AES-GCM",
+      length: 256
+    },
+    false,
+    ["encrypt", "decrypt"]
   );
 }
 
@@ -140,13 +247,53 @@ function stablePayloadString(payload: SnapshotSealPayload): string {
   });
 }
 
+function parseGitHubTokenPayload(value: string): GitHubTokenSealPayload {
+  let raw: unknown;
+
+  try {
+    raw = JSON.parse(value);
+  } catch {
+    throw new AppError(401, "invalid_sealed_github_token", "Invalid sealed_github_token payload");
+  }
+
+  if (!raw || typeof raw !== "object") {
+    throw new AppError(401, "invalid_sealed_github_token", "Invalid sealed_github_token payload");
+  }
+
+  const payload = raw as GitHubTokenSealPayload;
+
+  if (
+    payload.v !== 1 ||
+    payload.type !== "github_token" ||
+    typeof payload.snapshot !== "string" ||
+    typeof payload.repo !== "string" ||
+    typeof payload.token !== "string" ||
+    typeof payload.exp !== "number"
+  ) {
+    throw new AppError(401, "invalid_sealed_github_token", "Invalid sealed_github_token payload");
+  }
+
+  return payload;
+}
+
+function stableGitHubTokenPayloadString(payload: GitHubTokenSealPayload): string {
+  return JSON.stringify({
+    v: payload.v,
+    type: payload.type,
+    snapshot: payload.snapshot,
+    repo: payload.repo,
+    token: payload.token,
+    exp: payload.exp
+  });
+}
+
 function base64UrlEncodeText(value: string): string {
   return base64UrlEncodeBytes(encoder.encode(value));
 }
 
 function base64UrlDecodeText(value: string): string {
   const bytes = base64UrlDecodeBytes(value);
-  return new TextDecoder().decode(bytes);
+  return decoder.decode(bytes);
 }
 
 function base64UrlEncodeBytes(bytes: Uint8Array): string {

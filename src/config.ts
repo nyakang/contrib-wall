@@ -3,6 +3,9 @@ import type { Env } from "./types";
 const DEFAULT_IMAGE_CACHE_TTL_SECONDS = 86_400;
 const MIN_IMAGE_CACHE_TTL_SECONDS = 60;
 const MAX_IMAGE_CACHE_TTL_SECONDS = 604_800;
+const DEFAULT_CONTRIB_REFRESH_INTERVAL_SECONDS = 86_400;
+const MIN_CONTRIB_REFRESH_INTERVAL_SECONDS = 3_600;
+const MAX_CONTRIB_REFRESH_INTERVAL_SECONDS = 604_800;
 
 export function getServiceName(env: Env): string {
   return env.SERVICE_NAME || "contrib-wall";
@@ -17,6 +20,13 @@ export function getImageCacheTtlSeconds(env: Env): number {
   if (!Number.isFinite(raw)) return DEFAULT_IMAGE_CACHE_TTL_SECONDS;
 
   return clamp(raw, MIN_IMAGE_CACHE_TTL_SECONDS, MAX_IMAGE_CACHE_TTL_SECONDS);
+}
+
+export function getContribRefreshIntervalSeconds(env: Env): number {
+  const raw = Number.parseInt(env.CONTRIB_REFRESH_INTERVAL_SECONDS || "", 10);
+  if (!Number.isFinite(raw)) return DEFAULT_CONTRIB_REFRESH_INTERVAL_SECONDS;
+
+  return clamp(raw, MIN_CONTRIB_REFRESH_INTERVAL_SECONDS, MAX_CONTRIB_REFRESH_INTERVAL_SECONDS);
 }
 
 export function shouldRequireSnapshotToken(env: Env): boolean {

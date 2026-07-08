@@ -47,7 +47,8 @@ export function buildSnapshotRecord(
   svg: string,
   options: ImageOptions,
   contributorCount: number,
-  expiresInDays: number
+  expiresInDays: number,
+  refreshIntervalSeconds: number
 ): SnapshotRecord {
   const createdAt = Date.now();
   const expiresAt = expiresInDays > 0 ? createdAt + expiresInDays * 86_400 * 1000 : null;
@@ -56,6 +57,8 @@ export function buildSnapshotRecord(
     svg,
     createdAt,
     expiresAt,
+    refreshedAt: createdAt,
+    nextRefreshAt: createdAt + refreshIntervalSeconds * 1000,
     repo: options.repo.fullName,
     contributorCount,
     options: {
@@ -82,10 +85,24 @@ export function ttlSecondsFromDays(expiresInDays: number): number | undefined {
   return Math.max(60, Math.floor(expiresInDays * 86_400));
 }
 
-export function snapshotImageUrl(origin: string, snapshotId: string, token: string): string {
+export function ttlSecondsFromRecord(record: SnapshotRecord): number | undefined {
+  if (record.expiresAt == null) return undefined;
+
+  return Math.max(60, Math.floor((record.expiresAt - Date.now()) / 1000));
+}
+
+export function snapshotImageUrl(
+  origin: string,
+  snapshotId: string,
+  token: string,
+  sealedGitHubToken?: string
+): string {
   const url = new URL("/image", origin);
   url.searchParams.set("snapshot", snapshotId);
   url.searchParams.set("sealed_token", token);
+  if (sealedGitHubToken) {
+    url.searchParams.set("sealed_github_token", sealedGitHubToken);
+  }
   return url.toString();
 }
 

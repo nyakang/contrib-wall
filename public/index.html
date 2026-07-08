@@ -12,7 +12,7 @@
       <div>
         <h1>Contrib Wall</h1>
         <p data-i18n="heroText">
-          使用你自己的 GitHub Token 生成贡献者头像墙快照。Token 只用于本次生成，不会保存，也不会出现在图片 URL 中。
+          使用你自己的 GitHub Token 生成会自动刷新的贡献者头像墙。Token 不会明文保存，会加密放入图片 URL 用于后续刷新。
         </p>
       </div>
       <div class="hero-actions">
@@ -34,7 +34,7 @@
             <label for="githubToken" data-i18n="githubToken">GitHub Token</label>
             <input id="githubToken" name="githubToken" type="password" autocomplete="off" placeholder="github_pat_xxx" required />
             <div class="hint" data-i18n="tokenHint">
-              推荐 Fine-grained Token，只给目标仓库 Metadata: Read-only 权限。Token 只通过 HTTPS POST 发送一次。
+              推荐 Fine-grained Token，只给目标仓库 Metadata: Read-only 权限。持有图片 URL 的人可以触发刷新，但不能读取明文 Token。
             </div>
           </div>
 
@@ -150,10 +150,10 @@
             <span data-i18n="anon">include anonymous contributors</span>
           </label>
 
-          <button id="submit" type="submit" data-i18n="generate">Generate snapshot URL</button>
+          <button id="submit" type="submit" data-i18n="generate">Generate auto-refresh URL</button>
 
           <p class="hint" data-i18n="ttlHint">
-            TTL 为 0 表示不过期，但公共服务不建议开放永久快照，否则 KV 容量容易被滥用。
+            TTL 为 0 表示不过期。图片会按服务端刷新间隔自动更新，公共服务不建议开放永久快照。
           </p>
         </form>
       </section>
