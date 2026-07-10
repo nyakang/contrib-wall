@@ -4,6 +4,13 @@ compatibility_date = "2026-07-08"
 workers_dev = true
 assets = { directory = "./frontend/dist", binding = "assets" }
 
+# KV 存储：保存贡献者快照和缓存数据。
+# 必须在 wrangler.toml 中声明，否则每次 wrangler deploy 都会覆盖 Dashboard 手动添加的绑定。
+# 获取 id：npx wrangler kv namespace create contrib-wall-kv
+[[kv_namespaces]]
+binding = "kv"
+id = "<YOUR_KV_NAMESPACE_ID>"
+
 [build]
 command = "cd frontend && npm install && npm run build"
 
