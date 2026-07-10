@@ -7,10 +7,9 @@
   <link rel="stylesheet" href="/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="ambient-bg"></div>
   <main>
     <header class="hero">
       <div class="hero-text">
@@ -21,7 +20,7 @@
       </div>
       <div class="hero-actions">
         <label class="sr-only" for="language" data-i18n="languageLabel">Language</label>
-        <select id="language" class="language-select" aria-label="Language">
+        <select id="language" class="language-select ghost-link" aria-label="Language">
           <option value="zh-CN">简体中文</option>
           <option value="en">English</option>
         </select>
@@ -32,7 +31,7 @@
     </header>
 
     <div class="grid">
-      <section class="card form-card">
+      <section class="card">
         <form id="form">
           <div class="field">
             <label for="githubToken" data-i18n="githubToken">GitHub Token</label>
@@ -162,7 +161,7 @@
         </form>
       </section>
 
-      <section class="card result-card">
+      <section class="card">
         <p id="status" class="status"></p>
 
         <h2 class="small-title" data-i18n="preview">Preview</h2>
