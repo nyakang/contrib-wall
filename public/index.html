@@ -5,11 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Contrib Wall</title>
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div class="ambient-bg"></div>
   <main>
     <header class="hero">
-      <div>
+      <div class="hero-text">
         <h1>Contrib Wall</h1>
         <p data-i18n="heroText">
           使用你自己的 GitHub Token 生成会自动刷新的贡献者头像墙。Token 不会明文保存，会加密放入图片 URL 用于后续刷新。
@@ -28,7 +32,7 @@
     </header>
 
     <div class="grid">
-      <section class="card">
+      <section class="card form-card">
         <form id="form">
           <div class="field">
             <label for="githubToken" data-i18n="githubToken">GitHub Token</label>
@@ -158,7 +162,7 @@
         </form>
       </section>
 
-      <section class="card">
+      <section class="card result-card">
         <p id="status" class="status"></p>
 
         <h2 class="small-title" data-i18n="preview">Preview</h2>
